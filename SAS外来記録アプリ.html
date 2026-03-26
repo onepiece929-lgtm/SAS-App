@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SAS外来記録</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1a2e4a;
+  --navy-light: #2d4a6e;
+  --blue: #2e6da4;
+  --blue-light: #4a90d9;
+  --teal: #0f8b8d;
+  --bg: #f0f3f7;
+  --card: #ffffff;
+  --border: #d6dde8;
+  --text: #1a2e4a;
+  --text-sub: #5a6a80;
+  --text-light: #8a99ad;
+  --red: #d93025;
+  --red-bg: #fdf2f2;
+  --green: #1a7a4a;
+  --green-bg: #f0faf4;
+  --yellow: #b07800;
+  --yellow-bg: #fffbf0;
+  --shadow: 0 2px 12px rgba(26,46,74,0.08);
+  --shadow-lg: 0 4px 24px rgba(26,46,74,0.14);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--navy);
+  color: white;
+  padding: 0 16px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.header-back {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  display: none;
+}
+.header-back.visible { display: block; }
+.header-title { font-size: 17px; font-weight: 600; flex: 1; letter-spacing: 0.02em; }
+.header-subtitle { font-size: 12px; color: rgba(255,255,255,0.65); }
+.header-action {
+  background: var(--teal);
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.header-action:active { opacity: 0.8; }
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── HOME ── */
+.search-section {
+  background: var(--navy);
+  padding: 16px 16px 20px;
+}
+.search-wrap {
+  position: relative;
+}
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: 24px;
+  border: none;
+  font-size: 16px;
+  font-family: inherit;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  outline: none;
+  transition: background 0.2s;
+}
+.search-input::placeholder { color: rgba(255,255,255,0.5); }
+.search-input:focus { background: rgba(255,255,255,0.18); }
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.5);
+  font-size: 18px;
+  pointer-events: none;
+}
+.search-clear {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.5);
+  font-size: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: none;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 16px 16px 8px;
+}
+
+/* ── PATIENT LIST ── */
+.patient-list { padding: 0 12px 80px; }
+.patient-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  border: 1.5px solid transparent;
+}
+.patient-card:active { transform: scale(0.98); box-shadow: 0 1px 6px rgba(26,46,74,0.06); }
+.patient-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--teal));
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.patient-info { flex: 1; min-width: 0; }
+.patient-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.patient-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.patient-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-overdue { background: var(--red-bg); color: var(--red); }
+.badge-recent { background: var(--green-bg); color: var(--green); }
+.badge-warning { background: var(--yellow-bg); color: var(--yellow); }
+.badge-none { background: #f0f3f7; color: var(--text-light); }
+
+/* ── DETAIL VIEW ── */
+.detail-hero {
+  background: linear-gradient(160deg, var(--navy) 0%, var(--navy-light) 100%);
+  padding: 20px 16px;
+  color: white;
+}
+.detail-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700;
+  margin-bottom: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.detail-name { font-size: 22px; font-weight: 700; }
+.detail-id { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+.detail-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.chip {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.9);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.detail-content { padding: 12px 12px 80px; }
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-title-icon { font-size: 14px; }
+
+.last-visit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lv-item { }
+.lv-label { font-size: 11px; color: var(--text-light); }
+.lv-val { font-size: 14px; font-weight: 500; color: var(--text); margin-top: 1px; }
+
+.btn-new-record {
+  width: 100%;
+  background: var(--teal);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(15,139,141,0.3);
+  transition: opacity 0.15s;
+}
+.btn-new-record:active { opacity: 0.85; }
+
+/* History List */
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.history-item:last-child { border-bottom: none; padding-bottom: 0; }
+.history-item:first-child { padding-top: 0; }
+.history-date-box {
+  width: 48px; height: 48px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.history-date-m { font-size: 10px; color: var(--text-sub); }
+.history-date-d { font-size: 18px; font-weight: 700; color: var(--navy); line-height: 1; }
+.history-info { flex: 1; min-width: 0; }
+.history-title { font-size: 13px; font-weight: 500; }
+.history-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.history-arrow { color: var(--text-light); font-size: 16px; }
+
+.maker-tag {
+  display: inline-block;
+  background: #fff3e0;
+  color: #e65100;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+/* ── FORM VIEW ── */
+.form-body { padding: 12px 12px 100px; }
+.form-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.form-row { margin-bottom: 14px; }
+.form-row:last-child { margin-bottom: 0; }
+.form-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 500;
+  margin-bottom: 5px;
+  display: block;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text);
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--blue-light);
+}
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.mode-btn {
+  padding: 10px 4px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-sub);
+  transition: all 0.15s;
+}
+.mode-btn.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.form-checkbox {
+  width: 20px; height: 20px;
+  cursor: pointer;
+  accent-color: var(--blue);
+  flex-shrink: 0;
+}
+.checkbox-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.maker-contact-section { display: none; }
+.maker-contact-section.visible { display: block; }
+
+.btn-save {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 600px;
+  background: var(--navy);
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  transition: opacity 0.15s;
+}
+.btn-save:active { opacity: 0.85; }
+
+/* ── RECORD VIEW ── */
+.rv-header {
+  background: linear-gradient(160deg, var(--navy) 0%, var(--navy-light) 100%);
+  padding: 20px 16px;
+  color: white;
+}
+.rv-date { font-size: 24px; font-weight: 700; }
+.rv-patient { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+.rv-body { padding: 12px 12px 80px; }
+
+.rv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.rv-item {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.rv-label { font-size: 11px; color: var(--text-light); }
+.rv-val { font-size: 16px; font-weight: 600; color: var(--text); margin-top: 2px; }
+.rv-val-normal { color: var(--green); }
+.rv-val-warn { color: var(--yellow); }
+.rv-val-bad { color: var(--red); }
+
+.note-box {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 14px;
+  color: var(--text);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.maker-box {
+  background: #fff8f0;
+  border: 1.5px solid #ffd0a0;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.maker-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e65100;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── FAB ── */
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 26px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(15,139,141,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  transition: transform 0.15s;
+}
+.fab:active { transform: scale(0.92); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-light);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; }
+.empty-sub { font-size: 13px; margin-top: 4px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 200;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* ── PATIENT FORM ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 150;
+  align-items: flex-end;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: var(--bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-sub);
+}
+.btn-confirm {
+  flex: 2;
+  padding: 12px;
+  background: var(--navy);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+}
+
+.days-since {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+@media (min-width: 600px) {
+  .last-visit-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header" id="header">
+  <button class="header-back" id="headerBack" onclick="goBack()">&#8592;</button>
+  <div>
+    <div class="header-title" id="headerTitle">SAS外来記録</div>
+    <div class="header-subtitle" id="headerSub"></div>
+  </div>
+  <button class="header-action" id="headerAction" style="display:none">+ 患者追加</button>
+</div>
+
+<!-- HOME VIEW -->
+<div class="view active" id="viewHome">
+  <div class="search-section">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="searchInput" placeholder="患者名・IDで検索..." oninput="onSearch()" autocomplete="off">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+  <div id="sectionLabel" class="section-label">患者一覧（<span id="patientCount">0</span>名）</div>
+  <div class="patient-list" id="patientList"></div>
+  <button class="fab" onclick="showAddPatient()">＋</button>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="view" id="viewDetail">
+  <div class="detail-hero">
+    <div class="detail-avatar" id="detailAvatar"></div>
+    <div class="detail-name" id="detailName"></div>
+    <div class="detail-id" id="detailId"></div>
+    <div class="detail-chips" id="detailChips"></div>
+  </div>
+  <div class="detail-content">
+    <button class="btn-new-record" onclick="startNewRecord()">
+      📋 今日の記録を入力
+    </button>
+    <div class="card" id="lastVisitCard" style="display:none">
+      <div class="card-title"><span class="card-title-icon">📅</span>前回記録</div>
+      <div class="last-visit-grid" id="lastVisitGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">📚</span>記録履歴</div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FORM VIEW -->
+<div class="view" id="viewForm">
+  <div class="form-body">
+
+    <!-- 基本情報 -->
+    <div class="form-section">
+      <div class="form-section-title">📋 基本情報</div>
+      <div class="form-row">
+        <label class="form-label">外来日</label>
+        <input type="date" class="form-input" id="fVisitDate">
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">担当医師</label>
+          <input type="text" class="form-input" id="fDoctor" placeholder="氏名">
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">担当ME</label>
+          <input type="text" class="form-input" id="fMe" placeholder="氏名">
+        </div>
+      </div>
+    </div>
+
+    <!-- CPAP記録期間 -->
+    <div class="form-section">
+      <div class="form-section-title">📊 CPAP記録期間</div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">開始日</label>
+          <input type="date" class="form-input" id="fCpapFrom">
+        </div>
+        <div>
+          <label class="form-label">終了日</label>
+          <input type="date" class="form-input" id="fCpapTo">
+        </div>
+      </div>
+    </div>
+
+    <!-- CPAP記録 -->
+    <div class="form-section">
+      <div class="form-section-title">💨 CPAP記録</div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">AHI</label>
+          <input type="number" step="0.1" class="form-input" id="fAhi" placeholder="0.0">
+        </div>
+        <div>
+          <label class="form-label">EPAP(90/95%)</label>
+          <input type="number" step="0.1" class="form-input" id="fEpap" placeholder="cmH₂O">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">リーク量 (L/min)</label>
+          <input type="number" step="0.1" class="form-input" id="fLeak" placeholder="0.0">
+        </div>
+        <div>
+          <label class="form-label">使用時間</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="number" class="form-input" id="fHours" placeholder="h" style="width:60px;flex-shrink:0">
+            <span style="color:var(--text-sub);font-size:13px">時間</span>
+            <input type="number" class="form-input" id="fMinutes" placeholder="m" style="width:60px;flex-shrink:0">
+            <span style="color:var(--text-sub);font-size:13px">分</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">使用日数</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="number" class="form-input" id="fUsageDays" placeholder="">
+            <span style="color:var(--text-sub);font-size:13px">/</span>
+            <input type="number" class="form-input" id="fTotalDays" placeholder="">
+            <span style="color:var(--text-sub);font-size:13px">日</span>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">PS</label>
+          <input type="number" step="0.1" class="form-input" id="fPsRecord" placeholder="">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">RR</label>
+          <input type="number" step="0.1" class="form-input" id="fRr" placeholder="">
+        </div>
+        <div>
+          <label class="form-label">MV</label>
+          <input type="number" step="0.1" class="form-input" id="fMv" placeholder="">
+        </div>
+      </div>
+    </div>
+
+    <!-- 装置設定 -->
+    <div class="form-section">
+      <div class="form-section-title">⚙️ 装置設定</div>
+      <div class="form-row">
+        <label class="form-label">モード</label>
+        <div class="mode-grid">
+          <button class="mode-btn" onclick="toggleMode('AC')" id="modeAC">AC</button>
+          <button class="mode-btn" onclick="toggleMode('AS')" id="modeAS">AS</button>
+          <button class="mode-btn" onclick="toggleMode('Bi')" id="modeBi">Bi</button>
+          <button class="mode-btn" onclick="toggleMode('ASV')" id="modeASV">ASV</button>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div>
+          <label class="form-label">Flex(EPR)</label>
+          <input type="number" step="0.1" class="form-input" id="fFlex" placeholder="">
+        </div>
+        <div>
+          <label class="form-label">PEEP</label>
+          <input type="number" step="0.1" class="form-input" id="fPeep" placeholder="">
+        </div>
+        <div>
+          <label class="form-label">PS</label>
+          <input type="number" step="0.1" class="form-input" id="fPs" placeholder="">
+        </div>
+      </div>
+    </div>
+
+    <!-- 診察記録 -->
+    <div class="form-section">
+      <div class="form-section-title">📝 診察記録</div>
+      <div class="form-row">
+        <textarea class="form-textarea" id="fClinicalNote" placeholder="診察内容、特記事項など..."></textarea>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" class="form-checkbox" id="fCardReturned">
+        <label class="checkbox-label" for="fCardReturned">カード返却済み</label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" class="form-checkbox" id="fSettingChanged">
+        <label class="checkbox-label" for="fSettingChanged">設定変更あり</label>
+      </div>
+    </div>
+
+    <!-- メーカー対応 -->
+    <div class="form-section">
+      <div class="form-section-title">🏢 メーカー対応</div>
+      <div class="checkbox-row">
+        <input type="checkbox" class="form-checkbox" id="fMakerContact" onchange="toggleMakerContact()">
+        <label class="checkbox-label" for="fMakerContact">メーカー対応あり（訪問・電話）</label>
+      </div>
+      <div class="maker-contact-section" id="makerContactSection">
+        <div class="form-row">
+          <label class="form-label">対応種別</label>
+          <div style="display:flex;gap:10px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+              <input type="radio" name="makerType" value="訪問" id="makerTypeVisit" checked> 訪問
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+              <input type="radio" name="makerType" value="電話" id="makerTypePhone"> 電話
+            </label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">対応日</label>
+          <input type="date" class="form-input" id="fMakerDate">
+        </div>
+        <div class="form-row">
+          <label class="form-label">担当スタッフ（メーカー）</label>
+          <input type="text" class="form-input" id="fMakerStaff" placeholder="担当者名">
+        </div>
+        <div class="form-row">
+          <label class="form-label">対応内容</label>
+          <textarea class="form-textarea" id="fMakerContent" placeholder="対応内容を記入..."></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <button class="btn-save" onclick="saveRecord()">💾 記録を保存</button>
+</div>
+
+<!-- RECORD VIEW -->
+<div class="view" id="viewRecord">
+  <div class="rv-header">
+    <div class="rv-date" id="rvDate"></div>
+    <div class="rv-patient" id="rvPatient"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap" id="rvChips"></div>
+  </div>
+  <div class="rv-body" id="rvBody"></div>
+</div>
+
+<!-- ADD PATIENT MODAL -->
+<div class="modal-overlay" id="addPatientModal">
+  <div class="modal-sheet">
+    <div class="modal-title">患者を追加</div>
+    <div class="form-row">
+      <label class="form-label">患者ID（8桁）</label>
+      <input type="text" class="form-input" id="mpId" placeholder="00000000" maxlength="8">
+    </div>
+    <div class="form-row">
+      <label class="form-label">氏名</label>
+      <input type="text" class="form-input" id="mpName" placeholder="例：山田太郎">
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">機種</label>
+        <input type="text" class="form-input" id="mpDevice" placeholder="SM10等">
+      </div>
+      <div>
+        <label class="form-label">マスク</label>
+        <input type="text" class="form-input" id="mpMask" placeholder="マスク名">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAddPatient()">キャンセル</button>
+      <button class="btn-confirm" onclick="saveNewPatient()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════════
+const INITIAL_PATIENTS = [{"id":"03160057","name":"青木一","device":"CS-A","mask":"","lastVisit":""},{"id":"02277381","name":"朝田英行","device":"SM11","mask":"","lastVisit":""},{"id":"01622131","name":"麻生　敏行","device":"SM11","mask":"","lastVisit":"2026-03-12"},{"id":"03980321","name":"新井秋男","device":"D・S","mask":"","lastVisit":""},{"id":"03087923","name":"荒木　正人","device":"","mask":"","lastVisit":""},{"id":"01748581","name":"有本　秀夫","device":"D・S","mask":"","lastVisit":""},{"id":"04049698","name":"池上哲平","device":"D・S","mask":"","lastVisit":""},{"id":"04083421","name":"池田理恵","device":"CS-A","mask":"","lastVisit":""},{"id":"01508938","name":"池邊豪俊","device":"SM10","mask":"AirFit F20","lastVisit":""},{"id":"01454736","name":"井阪　登","device":"D・S","mask":"","lastVisit":""},{"id":"04177447","name":"石川健造","device":"D・S","mask":"","lastVisit":""},{"id":"02369794","name":"石川政則","device":"D・S","mask":"","lastVisit":""},{"id":"00639934","name":"石田寛","device":"SM10","mask":"","lastVisit":"2025-11-13"},{"id":"01149504","name":"石村照子","device":"D・S","mask":"","lastVisit":""},{"id":"00817617","name":"泉川菊治","device":"D・S","mask":"ドリームウェア S/Mフィットパック","lastVisit":"2026-02-26"},{"id":"04283933","name":"和泉一裕","device":"SM10","mask":"コンフォートジェル ブルー フル","lastVisit":"2026-01-08"},{"id":"04872933","name":"和泉淳史","device":"SM10","mask":"AirFit F20","lastVisit":""},{"id":"01444869","name":"井関喜代美","device":"CS-A","mask":"","lastVisit":""},{"id":"00444721","name":"市川弘文","device":"D・S","mask":"","lastVisit":""},{"id":"04147163","name":"井登朋雄","device":"D・S","mask":"","lastVisit":""},{"id":"01228807","name":"井上正子","device":"AutoSV","mask":"","lastVisit":""},{"id":"02889300","name":"岩垣雅典","device":"SM10","mask":"AirFit F20","lastVisit":"2025-11-13"},{"id":"01995868","name":"岩崎昌宏","device":"AutoSV","mask":"アマラビューフルフェイスマスク M","lastVisit":"2026-03-12"},{"id":"02962544","name":"上大谷勇春","device":"BiPAP","mask":"ドリームウェア S/Mフィットパック","lastVisit":"2025-11-13"},{"id":"00457598","name":"上田晶子","device":"","mask":"","lastVisit":""},{"id":"00355917","name":"植野和雄","device":"D・S","mask":"ピコネーザルマスク L","lastVisit":"2025-12-11"},{"id":"01441477","name":"植野武彦","device":"D・S","mask":"アマラジェル フルフェイスマスク L","lastVisit":"2026-02-28"},{"id":"04326395","name":"上原直樹","device":"SM10","mask":"ミラージュFX","lastVisit":"2025-10-23"},{"id":"03542617","name":"魚住勝彦","device":"SM10","mask":"AirFit F20","lastVisit":""},{"id":"04374143","name":"内村　学","device":"D・S","mask":"","lastVisit":""},{"id":"03441718","name":"大池廣一","device":"D・S","mask":"","lastVisit":""},{"id":"04231804","name":"大久保學","device":"AutoSV","mask":"","lastVisit":""},{"id":"03895157","name":"大久保佳照","device":"SM10","mask":"AirFit F20","lastVisit":""},{"id":"04247377","name":"大鳥慎一","device":"SM10","mask":"","lastVisit":""},{"id":"01529069","name":"大津博臣","device":"","mask":"","lastVisit":""},{"id":"03798681","name":"大西　義幸","device":"","mask":"","lastVisit":"2025-08-27"},{"id":"00800190","name":"岡本瑞希","device":"","mask":"","lastVisit":""},{"id":"03431728","name":"岡村勝男","device":"D・S","mask":"ウィスプ ネーザルマスク L","lastVisit":"2025-11-13"},{"id":"04008820","name":"岡部隆","device":"D・S","mask":"","lastVisit":""},{"id":"03433632","name":"小川博正","device":"D・S","mask":"","lastVisit":""},{"id":"04187408","name":"奥野年明","device":"SM10","mask":"AirFit N20","lastVisit":""},{"id":"02684767","name":"小田惣一","device":"SM10","mask":"","lastVisit":""},{"id":"04916064","name":"小野信男","device":"SM11","mask":"","lastVisit":"2026-03-12"},{"id":"02209553","name":"加治木春雄","device":"D・S","mask":"","lastVisit":""},{"id":"02229779","name":"亀山秀男","device":"BiPAP","mask":"ドリームウェアフル S/Mフィットパック","lastVisit":"2025-10-09"},{"id":"04191850","name":"河上武義","device":"D・S","mask":"ウィスプ ネーザルマスク L","lastVisit":"2026-03-12"},{"id":"03095892","name":"川上　裕","device":"","mask":"","lastVisit":""},{"id":"02694731","name":"河野恒夫","device":"D・S","mask":"ウィスプ ネーザルマスク L","lastVisit":"2026-01-08"},{"id":"04134309","name":"川端博文","device":"D・S","mask":"","lastVisit":""},{"id":"01357189","name":"岸田為信","device":"","mask":"","lastVisit":""},{"id":"00163950","name":"金本広美","device":"SM10","mask":"","lastVisit":""},{"id":"02385079","name":"河鰭頼武","device":"D・S","mask":"","lastVisit":""},{"id":"00013233","name":"北川博康","device":"D・S","mask":"アマラジェル フルフェイスマスク M","lastVisit":"2026-02-26"},{"id":"00910909","name":"紀ノ岡博","device":"D・S","mask":"","lastVisit":""},{"id":"04365518","name":"木村知也","device":"テイジン","mask":"","lastVisit":"2025-09-25"},{"id":"05146396","name":"木村秀樹","device":"SM11","mask":"","lastVisit":"2025-09-11"},{"id":"04780999","name":"清田克己","device":"","mask":"","lastVisit":""},{"id":"02997577","name":"工藤達郎","device":"SM10","mask":"Eson2","lastVisit":"2025-12-11"},{"id":"01628261","name":"久保重正","device":"","mask":"","lastVisit":""},{"id":"01893973","name":"小門茂樹","device":"SM11","mask":"","lastVisit":""},{"id":"04365880","name":"小玉博樹","device":"SM10","mask":"AirFit P10","lastVisit":"2026-02-26"},{"id":"02159098","name":"小西美津子","device":"CS-A","mask":"","lastVisit":""},{"id":"03597963","name":"小西貴明","device":"SM10","mask":"AirFit F20","lastVisit":""},{"id":"05184277","name":"小橋　敏郎","device":"SM11","mask":"","lastVisit":""},{"id":"04392565","name":"小六忠之","device":"SM10","mask":"AirFit F20","lastVisit":"2026-03-12"},{"id":"03388703","name":"坂慶一","device":"D・S","mask":"","lastVisit":""},{"id":"00203946","name":"坂井文子","device":"","mask":"","lastVisit":""},{"id":"04040008","name":"阪口文章","device":"SM10","mask":"","lastVisit":""},{"id":"02577146","name":"崎山芳彦","device":"SM10","mask":"","lastVisit":""},{"id":"00944179","name":"澤田禮子","device":"D・S","mask":"","lastVisit":""},{"id":"02658683","name":"椎名成明","device":"","mask":"","lastVisit":""},{"id":"04503613","name":"柴隆行","device":"CS-A","mask":"","lastVisit":""},{"id":"03535996","name":"神内貴博","device":"SM10","mask":"","lastVisit":""},{"id":"02447373","name":"芝本和己","device":"D・S","mask":"","lastVisit":""},{"id":"01509924","name":"杉本秋男","device":"D・S","mask":"アマラジェル フルフェイスマスク L","lastVisit":"2026-02-26"},{"id":"02384672","name":"清家澄信","device":"D・S","mask":"","lastVisit":""},{"id":"01696743","name":"平　利明","device":"SM10","mask":"Eson2","lastVisit":"2025-10-23"},{"id":"00996693","name":"高尾　佐一","device":"CS-A","mask":"","lastVisit":"2026-03-12"},{"id":"04431426","name":"高宮阿子","device":"D・S","mask":"","lastVisit":""},{"id":"03729090","name":"田口明彦","device":"D・S","mask":"","lastVisit":""},{"id":"02339546","name":"武田キミ子","device":"D・S","mask":"","lastVisit":""},{"id":"00544320","name":"武原森美","device":"SM10","mask":"Eson2","lastVisit":""},{"id":"02527316","name":"武輪和彰","device":"D・S","mask":"アマラビューフルフェイスマスク M","lastVisit":"2025-12-25"},{"id":"03873166","name":"蛸川　寛","device":"SM10","mask":"","lastVisit":""},{"id":"01108383","name":"鈩 弘隆","device":"SM11","mask":"Eson2","lastVisit":""},{"id":"02524830","name":"棚橋　美佐子","device":"SM10","mask":"コンフォートジェル ブルー フル","lastVisit":"2026-03-12"},{"id":"03039641","name":"田畑喜美子","device":"D・S","mask":"","lastVisit":""},{"id":"00733665","name":"辻　正則","device":"SM11","mask":"","lastVisit":"2025-11-13"},{"id":"02805106","name":"辻本正彦","device":"CS-A","mask":"","lastVisit":"2026-02-28"},{"id":"00436836","name":"鶴丸利郎","device":"D・S","mask":"","lastVisit":""},{"id":"04655668","name":"出渕美喜","device":"SM10","mask":"AirFit N20","lastVisit":"2025-11-13"},{"id":"02139364","name":"徳富慶二","device":"","mask":"","lastVisit":""},{"id":"01304239","name":"冨永隆信","device":"D・S","mask":"アマラジェル フルフェイスマスク L","lastVisit":"2025-10-23"},{"id":"00721101","name":"中川義一","device":"D・S","mask":"","lastVisit":""},{"id":"02203410","name":"長宮春美","device":"D・S","mask":"","lastVisit":""},{"id":"01965775","name":"中西加代子","device":"D・S","mask":"","lastVisit":""},{"id":"01708770","name":"中村正己","device":"CS-A","mask":"","lastVisit":""},{"id":"01908237","name":"中村　美紀子","device":"SM11","mask":"","lastVisit":"2026-03-12"},{"id":"04366520","name":"中村美津子","device":"SM10","mask":"","lastVisit":""},{"id":"03705357","name":"中村留美","device":"D・S","mask":"アマラビューフルフェイスマスク M","lastVisit":""},{"id":"03346240","name":"中山清秀","device":"AutoSV","mask":"","lastVisit":""},{"id":"04221814","name":"西中実","device":"D・S","mask":"","lastVisit":""},{"id":"03473391","name":"西美幸","device":"BiPAP","mask":"ドリームウェア シリコンピローマスク","lastVisit":"2025-12-11"},{"id":"00955540","name":"西村輝之","device":"SM10","mask":"","lastVisit":""},{"id":"03347029","name":"新田朝世","device":"SM10","mask":"","lastVisit":""},{"id":"01313505","name":"野口宏","device":"AutoSV","mask":"","lastVisit":""},{"id":"02041180","name":"萩ノ前一代","device":"CS-A","mask":"","lastVisit":""},{"id":"04608929","name":"橋本　明","device":"SM11","mask":"AirFit F20","lastVisit":"2025-07-24"},{"id":"01171051","name":"波戸清子","device":"","mask":"","lastVisit":""},{"id":"01194300","name":"濱田　千鶴子","device":"SM11","mask":"","lastVisit":"2026-02-26"},{"id":"02837996","name":"林寛","device":"SM11","mask":"","lastVisit":""},{"id":"04638436","name":"原　利男","device":"SM10","mask":"","lastVisit":""},{"id":"01510670","name":"平石　泰晶","device":"","mask":"","lastVisit":""},{"id":"04423900","name":"深道　賢一","device":"SM10","mask":"","lastVisit":""},{"id":"03071463","name":"福田佳弘","device":"D・S","mask":"アマラジェル フルフェイスマスク M","lastVisit":"2026-01-08"},{"id":"01045310","name":"福本憲司","device":"","mask":"","lastVisit":""},{"id":"03703032","name":"藤崎功三","device":"AutoSV","mask":"","lastVisit":""},{"id":"02661243","name":"藤田幹次","device":"D・S","mask":"ウィスプ ネーザルマスク L","lastVisit":"2025-11-13"},{"id":"03138490","name":"藤原和子","device":"CS-A","mask":"","lastVisit":""},{"id":"00806518","name":"藤原勝博","device":"D・S","mask":"ピコネーザルマスク L","lastVisit":"2025-11-13"},{"id":"01792443","name":"古川眞希","device":"","mask":"","lastVisit":""},{"id":"02497323","name":"堀内富雄","device":"D・S","mask":"","lastVisit":""},{"id":"02326533","name":"前田勝己","device":"D・S","mask":"","lastVisit":""},{"id":"03111187","name":"前田龍一","device":"SM11","mask":"","lastVisit":"2026-03-12"},{"id":"01423806","name":"増田康正","device":"SM10","mask":"","lastVisit":""},{"id":"02643902","name":"松井利雄","device":"AutoSV","mask":"","lastVisit":""},{"id":"04452816","name":"松浦節子","device":"SM10","mask":"","lastVisit":""},{"id":"03307645","name":"松岡睦","device":"D・S","mask":"ピコネーザルマスク XL","lastVisit":"2026-03-12"},{"id":"02145361","name":"松岡鎔巖","device":"","mask":"","lastVisit":""},{"id":"03019784","name":"松田誠治","device":"D・S","mask":"ドリームウェアネーザルマスクW","lastVisit":"2025-12-11"},{"id":"04111940","name":"松本勝彦","device":"SM10","mask":"Eson2","lastVisit":"2026-01-08"},{"id":"01019184","name":"馬渡　栄二","device":"SM11","mask":"","lastVisit":"2025-07-24"},{"id":"03673609","name":"水島三保子","device":"AutoSV","mask":"","lastVisit":""},{"id":"00727053","name":"道平善子","device":"D・S","mask":"","lastVisit":""},{"id":"05158876","name":"南口　正行","device":"SM11","mask":"","lastVisit":"2026-01-08"},{"id":"02065690","name":"嶺　清","device":"SM10","mask":"AirFit F20","lastVisit":""},{"id":"04106007","name":"宮崎寿則","device":"SM11","mask":"","lastVisit":"2025-09-11"},{"id":"02029432","name":"宮本克己","device":"AutoSV","mask":"","lastVisit":""},{"id":"04200123","name":"武藤朗","device":"D・S","mask":"","lastVisit":""},{"id":"04621294","name":"茂苅　茂","device":"SM10","mask":"","lastVisit":""},{"id":"03400568","name":"山崎一路","device":"D・S","mask":"","lastVisit":""},{"id":"04852555","name":"山下英樹","device":"SM11","mask":"AirFit P10","lastVisit":"2025-12-25"},{"id":"04770954","name":"山路洋子","device":"","mask":"","lastVisit":""},{"id":"00191650","name":"山田康正","device":"REMstar","mask":"","lastVisit":""},{"id":"01801185","name":"山本吉信","device":"SM10","mask":"","lastVisit":""},{"id":"04254700","name":"吉崎　篤","device":"CS-A","mask":"","lastVisit":""},{"id":"01019731","name":"横川　正一","device":"SM10","mask":"AirFit F20","lastVisit":"2026-03-12"},{"id":"03852844","name":"横野忍","device":"D・S","mask":"","lastVisit":""},{"id":"04367396","name":"米田哲郎","device":"SM10","mask":"","lastVisit":""},{"id":"04966768","name":"龍者　悟","device":"","mask":"","lastVisit":""},{"id":"02413967","name":"若林栄子","device":"D・S","mask":"","lastVisit":""},{"id":"05160576","name":"ワエルアハマド","device":"SM11","mask":"","lastVisit":"2025-12-11"},{"id":"00787051","name":"杉本　美喜子","device":"SM11","mask":"","lastVisit":""},{"id":"04302270","name":"下岡　恭子","device":"SM11","mask":"","lastVisit":""},{"id":"00447676","name":"藤原　猛士","device":"SM11","mask":"","lastVisit":""}];
+
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let currentPatientId = null;
+let currentRecordId = null;
+let selectedMode = null;
+let viewStack = ['home'];
+
+function loadPatients() {
+  const saved = localStorage.getItem('sas_patients');
+  if (saved) return JSON.parse(saved);
+  localStorage.setItem('sas_patients', JSON.stringify(INITIAL_PATIENTS));
+  return INITIAL_PATIENTS;
+}
+function savePatients(pts) { localStorage.setItem('sas_patients', JSON.stringify(pts)); }
+function loadRecords() {
+  const saved = localStorage.getItem('sas_records');
+  return saved ? JSON.parse(saved) : [];
+}
+function saveRecords(recs) { localStorage.setItem('sas_records', JSON.stringify(recs)); }
+
+// ════════════════════════════════════════════
+//  NAV
+// ════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view' + id).classList.add('active');
+}
+
+function goBack() {
+  viewStack.pop();
+  const prev = viewStack[viewStack.length - 1];
+  if (prev === 'home') { showView('Home'); updateHeader('home'); }
+  else if (prev === 'detail') { showView('Detail'); updateHeader('detail'); }
+  else { showView('Home'); updateHeader('home'); }
+}
+
+function updateHeader(view) {
+  const back = document.getElementById('headerBack');
+  const title = document.getElementById('headerTitle');
+  const sub = document.getElementById('headerSub');
+  const act = document.getElementById('headerAction');
+
+  if (view === 'home') {
+    back.classList.remove('visible');
+    title.textContent = 'SAS外来記録';
+    sub.textContent = '';
+    act.style.display = 'none';
+  } else if (view === 'detail') {
+    back.classList.add('visible');
+    const pts = loadPatients();
+    const p = pts.find(x => x.id === currentPatientId);
+    title.textContent = p ? p.name : '患者詳細';
+    sub.textContent = p ? p.id : '';
+    act.style.display = 'none';
+  } else if (view === 'form') {
+    back.classList.add('visible');
+    const pts = loadPatients();
+    const p = pts.find(x => x.id === currentPatientId);
+    title.textContent = '記録入力';
+    sub.textContent = p ? p.name : '';
+    act.style.display = 'none';
+  } else if (view === 'record') {
+    back.classList.add('visible');
+    title.textContent = '記録詳細';
+    sub.textContent = '';
+    act.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════════
+//  HOME
+// ════════════════════════════════════════════
+function renderPatientList(filter = '') {
+  const pts = loadPatients();
+  const recs = loadRecords();
+  const q = filter.trim().toLowerCase();
+  const filtered = q
+    ? pts.filter(p => p.name.includes(q) || p.id.includes(q) || p.name.replace(/\s/g,'').includes(q))
+    : pts;
+
+  document.getElementById('patientCount').textContent = filtered.length;
+  document.getElementById('sectionLabel').querySelector('span').textContent = filtered.length;
+
+  const container = document.getElementById('patientList');
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">患者が見つかりません</div><div class="empty-sub">検索ワードを変えてみてください</div></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(p => {
+    // Get last visit from records first, then from master
+    const patRecs = recs.filter(r => r.patientId === p.id).sort((a,b) => b.visitDate.localeCompare(a.visitDate));
+    const lastVisit = patRecs.length > 0 ? patRecs[0].visitDate : p.lastVisit;
+    const badge = getVisitBadge(lastVisit);
+    const initial = p.name.trim().charAt(0) || '?';
+    const metaParts = [p.device, p.mask].filter(Boolean);
+    return `
+      <div class="patient-card" onclick="openPatient('${p.id}')">
+        <div class="patient-avatar">${initial}</div>
+        <div class="patient-info">
+          <div class="patient-name">${p.name}</div>
+          <div class="patient-meta">${p.id}${metaParts.length ? ' · ' + metaParts.join(' · ') : ''}</div>
+          ${lastVisit ? `<div class="days-since">前回：${formatDate(lastVisit)}${getDaysSince(lastVisit)}</div>` : '<div class="days-since">記録なし</div>'}
+        </div>
+        <span class="patient-badge ${badge.cls}">${badge.text}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function getVisitBadge(lastVisit) {
+  if (!lastVisit) return { cls: 'badge-none', text: '未記録' };
+  const days = Math.floor((Date.now() - new Date(lastVisit)) / 86400000);
+  if (days <= 30) return { cls: 'badge-recent', text: '最近' };
+  if (days <= 90) return { cls: 'badge-warning', text: '2-3ヶ月' };
+  return { cls: 'badge-overdue', text: '要確認' };
+}
+
+function getDaysSince(dateStr) {
+  if (!dateStr) return '';
+  const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+  if (days === 0) return '（今日）';
+  return `（${days}日前）`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+}
+
+function onSearch() {
+  const v = document.getElementById('searchInput').value;
+  document.getElementById('searchClear').style.display = v ? 'block' : 'none';
+  renderPatientList(v);
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  renderPatientList();
+}
+
+// ════════════════════════════════════════════
+//  DETAIL
+// ════════════════════════════════════════════
+function openPatient(id) {
+  currentPatientId = id;
+  viewStack.push('detail');
+  const pts = loadPatients();
+  const p = pts.find(x => x.id === id);
+  if (!p) return;
+
+  document.getElementById('detailAvatar').textContent = p.name.trim().charAt(0);
+  document.getElementById('detailName').textContent = p.name;
+  document.getElementById('detailId').textContent = 'ID: ' + p.id;
+
+  const chips = [];
+  if (p.device) chips.push(p.device);
+  if (p.mask) chips.push(p.mask);
+  document.getElementById('detailChips').innerHTML = chips.map(c => `<span class="chip">${c}</span>`).join('');
+
+  // Last visit summary
+  const recs = loadRecords().filter(r => r.patientId === id).sort((a,b) => b.visitDate.localeCompare(a.visitDate));
+  const lvCard = document.getElementById('lastVisitCard');
+  const lvGrid = document.getElementById('lastVisitGrid');
+
+  if (recs.length > 0) {
+    const lr = recs[0];
+    lvCard.style.display = 'block';
+    lvGrid.innerHTML = `
+      <div class="lv-item"><div class="lv-label">前回外来日</div><div class="lv-val">${formatDate(lr.visitDate)}</div></div>
+      <div class="lv-item"><div class="lv-label">AHI</div><div class="lv-val">${lr.ahi || '-'}</div></div>
+      <div class="lv-item"><div class="lv-label">リーク量</div><div class="lv-val">${lr.leak ? lr.leak + ' L/min' : '-'}</div></div>
+      <div class="lv-item"><div class="lv-label">使用時間</div><div class="lv-val">${lr.hours && lr.minutes ? lr.hours + 'h ' + lr.minutes + 'm' : lr.hours ? lr.hours + 'h' : '-'}</div></div>
+      <div class="lv-item"><div class="lv-label">使用日数</div><div class="lv-val">${lr.usageDays && lr.totalDays ? lr.usageDays + '/' + lr.totalDays + '日' : '-'}</div></div>
+      <div class="lv-item"><div class="lv-label">担当医師</div><div class="lv-val">${lr.doctor || '-'}</div></div>
+    `;
+  } else {
+    lvCard.style.display = 'none';
+  }
+
+  // History
+  const histList = document.getElementById('historyList');
+  if (recs.length === 0) {
+    histList.innerHTML = '<div class="empty" style="padding:24px 0"><div class="empty-icon">📋</div><div class="empty-title">記録がありません</div><div class="empty-sub">「今日の記録を入力」から追加してください</div></div>';
+  } else {
+    histList.innerHTML = recs.map(r => {
+      const d = new Date(r.visitDate);
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+      const sub = [r.doctor ? `Dr.${r.doctor}` : null, r.ahi ? `AHI:${r.ahi}` : null, r.makerContact ? 'メーカー対応あり' : null].filter(Boolean).join(' · ');
+      return `
+        <div class="history-item" onclick="openRecord('${r.id}')">
+          <div class="history-date-box">
+            <div class="history-date-m">${month}月</div>
+            <div class="history-date-d">${day}</div>
+          </div>
+          <div class="history-info">
+            <div class="history-title">${d.getFullYear()}年${month}月${day}日の記録${r.makerContact ? '<span class="maker-tag">メーカー</span>' : ''}</div>
+            <div class="history-sub">${sub || '記録あり'}</div>
+          </div>
+          <div class="history-arrow">›</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  showView('Detail');
+  updateHeader('detail');
+}
+
+// ════════════════════════════════════════════
+//  FORM
+// ════════════════════════════════════════════
+function startNewRecord() {
+  viewStack.push('form');
+  currentRecordId = null;
+  selectedMode = null;
+
+  // Reset form
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('fVisitDate').value = today;
+  document.getElementById('fDoctor').value = '';
+  document.getElementById('fMe').value = '';
+  document.getElementById('fCpapFrom').value = '';
+  document.getElementById('fCpapTo').value = today;
+  document.getElementById('fAhi').value = '';
+  document.getElementById('fEpap').value = '';
+  document.getElementById('fLeak').value = '';
+  document.getElementById('fHours').value = '';
+  document.getElementById('fMinutes').value = '';
+  document.getElementById('fUsageDays').value = '';
+  document.getElementById('fTotalDays').value = '';
+  document.getElementById('fPsRecord').value = '';
+  document.getElementById('fRr').value = '';
+  document.getElementById('fMv').value = '';
+  document.getElementById('fFlex').value = '';
+  document.getElementById('fPeep').value = '';
+  document.getElementById('fPs').value = '';
+  document.getElementById('fClinicalNote').value = '';
+  document.getElementById('fCardReturned').checked = false;
+  document.getElementById('fSettingChanged').checked = false;
+  document.getElementById('fMakerContact').checked = false;
+  document.getElementById('fMakerDate').value = today;
+  document.getElementById('fMakerStaff').value = '';
+  document.getElementById('fMakerContent').value = '';
+  document.getElementById('makerContactSection').classList.remove('visible');
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+
+  showView('Form');
+  updateHeader('form');
+}
+
+function toggleMode(mode) {
+  if (selectedMode === mode) {
+    selectedMode = null;
+    document.getElementById('mode' + mode).classList.remove('active');
+  } else {
+    if (selectedMode) document.getElementById('mode' + selectedMode).classList.remove('active');
+    selectedMode = mode;
+    document.getElementById('mode' + mode).classList.add('active');
+  }
+}
+
+function toggleMakerContact() {
+  const checked = document.getElementById('fMakerContact').checked;
+  document.getElementById('makerContactSection').classList.toggle('visible', checked);
+}
+
+function saveRecord() {
+  const visitDate = document.getElementById('fVisitDate').value;
+  if (!visitDate) { showToast('外来日を入力してください'); return; }
+
+  const record = {
+    id: Date.now().toString(),
+    patientId: currentPatientId,
+    visitDate,
+    doctor: document.getElementById('fDoctor').value.trim(),
+    me: document.getElementById('fMe').value.trim(),
+    cpapFrom: document.getElementById('fCpapFrom').value,
+    cpapTo: document.getElementById('fCpapTo').value,
+    ahi: document.getElementById('fAhi').value,
+    epap: document.getElementById('fEpap').value,
+    leak: document.getElementById('fLeak').value,
+    hours: document.getElementById('fHours').value,
+    minutes: document.getElementById('fMinutes').value,
+    usageDays: document.getElementById('fUsageDays').value,
+    totalDays: document.getElementById('fTotalDays').value,
+    psRecord: document.getElementById('fPsRecord').value,
+    rr: document.getElementById('fRr').value,
+    mv: document.getElementById('fMv').value,
+    mode: selectedMode || '',
+    flex: document.getElementById('fFlex').value,
+    peep: document.getElementById('fPeep').value,
+    ps: document.getElementById('fPs').value,
+    clinicalNote: document.getElementById('fClinicalNote').value.trim(),
+    cardReturned: document.getElementById('fCardReturned').checked,
+    settingChanged: document.getElementById('fSettingChanged').checked,
+    makerContact: document.getElementById('fMakerContact').checked,
+    makerType: document.querySelector('input[name="makerType"]:checked')?.value || '訪問',
+    makerDate: document.getElementById('fMakerDate').value,
+    makerStaff: document.getElementById('fMakerStaff').value.trim(),
+    makerContent: document.getElementById('fMakerContent').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  const recs = loadRecords();
+  recs.push(record);
+  saveRecords(recs);
+
+  // Update lastVisit in patient master
+  const pts = loadPatients();
+  const pi = pts.findIndex(p => p.id === currentPatientId);
+  if (pi >= 0) {
+    if (!pts[pi].lastVisit || visitDate > pts[pi].lastVisit) {
+      pts[pi].lastVisit = visitDate;
+    }
+    savePatients(pts);
+  }
+
+  showToast('✅ 記録を保存しました');
+  setTimeout(() => {
+    viewStack.pop();
+    openPatient(currentPatientId);
+  }, 800);
+}
+
+// ════════════════════════════════════════════
+//  RECORD VIEW
+// ════════════════════════════════════════════
+function openRecord(id) {
+  viewStack.push('record');
+  const recs = loadRecords();
+  const r = recs.find(x => x.id === id);
+  if (!r) return;
+  currentRecordId = id;
+
+  const pts = loadPatients();
+  const p = pts.find(x => x.id === r.patientId);
+
+  document.getElementById('rvDate').textContent = formatDate(r.visitDate);
+  document.getElementById('rvPatient').textContent = p ? p.name + ' (' + p.id + ')' : r.patientId;
+
+  const chips = [];
+  if (r.doctor) chips.push(`Dr. ${r.doctor}`);
+  if (r.me) chips.push(`ME: ${r.me}`);
+  if (r.cardReturned) chips.push('カード返却済');
+  if (r.settingChanged) chips.push('設定変更あり');
+  document.getElementById('rvChips').innerHTML = chips.map(c => `<span class="chip">${c}</span>`).join('');
+
+  let html = '';
+
+  // CPAP Data
+  if (r.ahi || r.epap || r.leak || r.hours) {
+    html += `<div class="card"><div class="card-title"><span>💨</span> CPAP記録</div>`;
+    if (r.cpapFrom || r.cpapTo) {
+      html += `<div style="font-size:12px;color:var(--text-sub);margin-bottom:12px">記録期間: ${r.cpapFrom ? formatDate(r.cpapFrom) : '?'} 〜 ${r.cpapTo ? formatDate(r.cpapTo) : '?'}</div>`;
+    }
+    html += `<div class="rv-grid">`;
+    if (r.ahi) html += rvItem('AHI', r.ahi, getAhiClass(parseFloat(r.ahi)));
+    if (r.epap) html += rvItem('EPAP(90/95%)', r.epap + ' cmH₂O');
+    if (r.leak) html += rvItem('リーク量', r.leak + ' L/min', getLeakClass(parseFloat(r.leak)));
+    const usageTime = r.hours && r.minutes ? r.hours + 'h ' + r.minutes + 'm' : r.hours ? r.hours + 'h' : r.minutes ? r.minutes + 'm' : '';
+    if (usageTime) html += rvItem('使用時間', usageTime);
+    if (r.usageDays && r.totalDays) html += rvItem('使用日数', r.usageDays + ' / ' + r.totalDays + ' 日');
+    if (r.psRecord) html += rvItem('PS', r.psRecord);
+    if (r.rr) html += rvItem('RR', r.rr);
+    if (r.mv) html += rvItem('MV', r.mv);
+    html += `</div></div>`;
+  }
+
+  // Device Settings
+  if (r.mode || r.flex || r.peep || r.ps) {
+    html += `<div class="card"><div class="card-title"><span>⚙️</span> 装置設定</div><div class="rv-grid">`;
+    if (r.mode) html += rvItem('モード', r.mode);
+    if (r.flex) html += rvItem('Flex(EPR)', r.flex);
+    if (r.peep) html += rvItem('PEEP', r.peep);
+    if (r.ps) html += rvItem('PS', r.ps);
+    html += `</div></div>`;
+  }
+
+  // Clinical Note
+  if (r.clinicalNote) {
+    html += `<div class="card"><div class="card-title"><span>📝</span> 診察記録</div><div class="note-box">${r.clinicalNote}</div></div>`;
+  }
+
+  // Maker Contact
+  if (r.makerContact) {
+    html += `<div class="card"><div class="card-title"><span>🏢</span> メーカー対応</div>
+      <div class="maker-box">
+        <div class="maker-box-title">🔶 ${r.makerType}対応</div>
+        <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px">${r.makerDate ? formatDate(r.makerDate) : '日付不明'}${r.makerStaff ? ' · 担当: ' + r.makerStaff : ''}</div>
+        ${r.makerContent ? `<div style="font-size:14px;white-space:pre-wrap">${r.makerContent}</div>` : ''}
+      </div></div>`;
+  }
+
+  if (!html) {
+    html = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">詳細データなし</div></div>';
+  }
+
+  document.getElementById('rvBody').innerHTML = html;
+  showView('Record');
+  updateHeader('record');
+}
+
+function rvItem(label, val, cls = '') {
+  return `<div class="rv-item"><div class="rv-label">${label}</div><div class="rv-val ${cls}">${val}</div></div>`;
+}
+
+function getAhiClass(v) {
+  if (v < 5) return 'rv-val-normal';
+  if (v < 15) return 'rv-val-warn';
+  return 'rv-val-bad';
+}
+function getLeakClass(v) {
+  if (v < 24) return 'rv-val-normal';
+  if (v < 40) return 'rv-val-warn';
+  return 'rv-val-bad';
+}
+
+// ════════════════════════════════════════════
+//  ADD PATIENT
+// ════════════════════════════════════════════
+function showAddPatient() {
+  document.getElementById('mpId').value = '';
+  document.getElementById('mpName').value = '';
+  document.getElementById('mpDevice').value = '';
+  document.getElementById('mpMask').value = '';
+  document.getElementById('addPatientModal').classList.add('open');
+}
+function closeAddPatient() {
+  document.getElementById('addPatientModal').classList.remove('open');
+}
+function saveNewPatient() {
+  const id = document.getElementById('mpId').value.trim().padStart(8, '0');
+  const name = document.getElementById('mpName').value.trim();
+  if (!name) { showToast('氏名を入力してください'); return; }
+  const pts = loadPatients();
+  if (pts.find(p => p.id === id)) { showToast('このIDは既に登録されています'); return; }
+  pts.push({ id, name, device: document.getElementById('mpDevice').value.trim(), mask: document.getElementById('mpMask').value.trim(), lastVisit: '' });
+  pts.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  savePatients(pts);
+  closeAddPatient();
+  renderPatientList();
+  showToast('✅ ' + name + ' を追加しました');
+}
+
+// ════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+renderPatientList();
+document.getElementById('patientCount').textContent = loadPatients().length;
+</script>
+</body>
+</html>
