@@ -588,6 +588,15 @@ body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: va
   <button class="header-action" id="headerAction" style="display:none">+ 患者追加</button>
 </div>
 
+<!-- DRIVE TOOLBAR -->
+<div id="drive-toolbar" style="background:#f0f3f7;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #d6dde8;flex-wrap:wrap;">
+  <span id="drive-status" style="font-size:12px;color:#5a6a80;flex:1;">🔌 Google Drive：未接続</span>
+  <button id="btn-drive-signin" onclick="driveSignIn()" style="font-size:12px;padding:6px 12px;background:#1a7a4a;color:white;border:none;border-radius:16px;cursor:pointer;font-family:inherit;">Driveに接続</button>
+  <button id="btn-drive-save" onclick="driveSaveAll()" style="display:none;font-size:12px;padding:6px 12px;background:#2e6da4;color:white;border:none;border-radius:16px;cursor:pointer;font-family:inherit;">💾 保存</button>
+  <button id="btn-drive-load" onclick="driveLoadAll()" style="display:none;font-size:12px;padding:6px 12px;background:#0f8b8d;color:white;border:none;border-radius:16px;cursor:pointer;font-family:inherit;">📂 読込</button>
+  <button id="btn-drive-signout" onclick="driveSignOut()" style="display:none;font-size:12px;padding:6px 12px;background:#8a99ad;color:white;border:none;border-radius:16px;cursor:pointer;font-family:inherit;">切断</button>
+</div>
+
 <!-- HOME VIEW -->
 <div class="view active" id="viewHome">
   <div class="search-section">
@@ -1312,6 +1321,69 @@ function showToast(msg) {
 // ════════════════════════════════════════════
 renderPatientList();
 document.getElementById('patientCount').textContent = loadPatients().length;
+</script>
+<script src="drive-integration.js"></script>
+<script>
+// ── Drive連携コントローラー ──────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await DRIVE.init();
+});
+
+async function driveSignIn() {
+  try {
+    document.getElementById('btn-drive-signin').textContent = '接続中...';
+    await DRIVE.signIn();
+    document.getElementById('drive-status').textContent = '✅ Google Drive：接続済み';
+    document.getElementById('btn-drive-signin').style.display  = 'none';
+    document.getElementById('btn-drive-save').style.display    = '';
+    document.getElementById('btn-drive-load').style.display    = '';
+    document.getElementById('btn-drive-signout').style.display = '';
+    showToast('✅ Driveに接続しました');
+  } catch (e) {
+    document.getElementById('btn-drive-signin').textContent = 'Driveに接続';
+    showToast('❌ 接続に失敗しました');
+  }
+}
+
+function driveSignOut() {
+  DRIVE.signOut();
+  document.getElementById('drive-status').textContent  = '🔌 Google Drive：未接続';
+  document.getElementById('btn-drive-signin').style.display  = '';
+  document.getElementById('btn-drive-save').style.display    = 'none';
+  document.getElementById('btn-drive-load').style.display    = 'none';
+  document.getElementById('btn-drive-signout').style.display = 'none';
+  showToast('Driveとの接続を切断しました');
+}
+
+async function driveSaveAll() {
+  try {
+    document.getElementById('btn-drive-save').textContent = '保存中...';
+    const patients = loadPatients();
+    const records  = loadRecords();
+    await DRIVE.saveJSON({ patients, records }, 'sas_data.json');
+    document.getElementById('btn-drive-save').textContent = '💾 保存';
+    showToast('✅ Driveに保存しました');
+  } catch (e) {
+    document.getElementById('btn-drive-save').textContent = '💾 保存';
+    showToast('❌ 保存に失敗しました：' + e.message);
+  }
+}
+
+async function driveLoadAll() {
+  try {
+    document.getElementById('btn-drive-load').textContent = '読込中...';
+    const data = await DRIVE.loadJSON('sas_data.json');
+    if (!data) { showToast('Driveにデータがまだありません'); document.getElementById('btn-drive-load').textContent = '📂 読込'; return; }
+    if (data.patients) savePatients(data.patients);
+    if (data.records)  saveRecords(data.records);
+    document.getElementById('btn-drive-load').textContent = '📂 読込';
+    showToast('✅ Driveからデータを読み込みました');
+    renderPatientList();
+  } catch (e) {
+    document.getElementById('btn-drive-load').textContent = '📂 読込';
+    showToast('❌ 読込に失敗しました：' + e.message);
+  }
+}
 </script>
 </body>
 </html>
